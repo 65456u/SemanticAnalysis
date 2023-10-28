@@ -1,12 +1,10 @@
-//
-// Created by niets on 10/25/2023.
-//
 
 #ifndef UTILS_H
 #define UTILS_H
 
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 namespace utils {
     template<typename Container>
@@ -23,8 +21,9 @@ namespace utils {
         return result.str();
     }
 
+
     template<typename InputIterator>
-    std::string join(InputIterator first, InputIterator last, const std::string &delimiter="") {
+    std::string join(InputIterator first, InputIterator last, const std::string &delimiter = "") {
         std::stringstream result;
         if (first != last) {
             result << *first;

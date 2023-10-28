@@ -1,6 +1,6 @@
 
-#include "src/Grammar.h"
-#include "src/LL1Grammar.h"
+#include "Grammar.h"
+#include "LL1Grammar.h"
 
 int main() {
     // Define non-terminalSet, terminalSet, productionMap, and start symbol
@@ -17,6 +17,10 @@ int main() {
     grammar.print();
     grammar.init();
     grammar.print();
-    auto tokens = grammar.tokenizeString("*num*+num");
-    grammar.parse(tokens, cout);
+    while (true) {
+        string tokenString;
+        cin >> tokenString;
+        auto tokens = grammar.tokenizeString(tokenString);
+        grammar.parse(tokens, cout);
+    }
 }

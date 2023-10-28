@@ -32,10 +32,10 @@ private:
                                  const grammar::Symbol &terminal,
                                  grammar::Rule production);
 
-    static std::string getParseStep(grammar::Sentence & tokens,
-                             const decltype(tokens.begin()) &itr,
-                             const grammar::Sentence & stack,
-                             const std::string &action);
+    static std::string getParseStep(grammar::Sentence &tokens,
+                                    const decltype(tokens.begin()) &itr,
+                                    const grammar::Sentence &stack,
+                                    const std::string &action);
 
 public:
     grammar::SymbolSet getFirstSet(const grammar::Symbol &symbol);

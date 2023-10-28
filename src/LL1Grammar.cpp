@@ -1,6 +1,5 @@
 #include "LL1Grammar.h"
 
-#include <utility>
 
 grammar::SymbolSet LL1Grammar::getFirstSet(const grammar::Symbol &symbol) {
     grammar::SymbolSet firstSet;
@@ -136,14 +135,15 @@ void LL1Grammar::parse(grammar::Sentence tokens, std::ostream &ostream) {
         } else {
             auto rule = parsingTable[X][a];
             if (rule.empty()) {
-                ostream << getParseStep(tokens, itr, stack, "Error Occurred, Skipping " + a) << std::endl;
+                ostream << getParseStep(tokens, itr, stack, "Error Occurred, Skipping " + a)
+                        << std::endl;
                 itr++;
             } else if (rule.front() == syncSign) {
-                ostream << getParseStep(tokens, itr, stack, "Error Occurred, Popping " + X) << std::endl;
+                ostream << getParseStep(tokens, itr, stack, "Error Occurred, Popping " + X)
+                        << std::endl;
                 stack.pop_back();
             } else {
-                ostream <<
-                        getParseStep(tokens, itr, stack, "Output " + ruleToString(X, rule))
+                ostream << getParseStep(tokens, itr, stack, "Output " + ruleToString(X, rule))
                         << std::endl;
                 stack.pop_back();
                 {
