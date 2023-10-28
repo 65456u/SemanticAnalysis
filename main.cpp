@@ -1,6 +1,6 @@
 
-#include "Grammar.h"
-#include "LL1Grammar.h"
+#include "src/Grammar.h"
+#include "src/LL1Grammar.h"
 
 int main() {
     // Define non-terminalSet, terminalSet, productionMap, and start symbol

@@ -4,8 +4,8 @@ project(SemanticAnalysis)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(SemanticAnalysis main.cpp
-        Grammar.cpp
-        Grammar.h
-        utils.h
-        LL1Grammar.cpp
-        LL1Grammar.h)
+        src/Grammar.cpp
+        src/Grammar.h
+        include/utils.h
+        src/LL1Grammar.cpp
+        src/LL1Grammar.h)
