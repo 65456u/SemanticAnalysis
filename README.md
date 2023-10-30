@@ -21,8 +21,8 @@ make
 
 2. **Running the Program**:
 ```shell
-# Execute the compiled executable to observe LR(1) parsing in Action:
-./SemanticAnalysis
+# Execute the compiled executable to observe LL(1) or LR(1) parsing in Action:
+./SemanticAnalysis [LL]
 ```
 
    The program will prompt you to input a string of tokens. It will then parse the input using the LL(1) parsing table generated from the sample grammar provided in the `main.cpp` file.
