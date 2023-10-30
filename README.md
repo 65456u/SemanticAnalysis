@@ -31,13 +31,11 @@ make
 
 The built-in grammar is as follows:
 
-\[
-\begin{align*}
-E &\rightarrow E + T \,|\, E - T \,|\, T \\
-T &\rightarrow T * F \,|\, T / F \,|\, F \\
-F &\rightarrow (E) \,|\, \text{num}
-\end{align*}
-\]
+```
+E -> E+T | E-T | T
+T -> T*F | T/F | F
+F -> (E) | num
+```
 
 You can alter the grammar in the `main.cpp` file.
 
