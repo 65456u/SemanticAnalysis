@@ -135,7 +135,7 @@ LL1Grammar::LL1Grammar(grammar::SymbolSet nonTerminals, grammar::SymbolSet termi
 
 }
 
-void LL1Grammar::print(std::ostream &ostream) {
+void LL1Grammar::printAll(std::ostream &ostream) {
     printGrammar(ostream);
     if (firstSetsConstructed) {
         ostream << "First Set:" << std::endl;
@@ -160,7 +160,6 @@ void LL1Grammar::init() {
     removeLeftRecursion();
     constructTowardsEpsilonSet();
     printGrammar();
-    removeEpsilon();
     printGrammar();
     constructFirstSets();
     constructFollowSets();

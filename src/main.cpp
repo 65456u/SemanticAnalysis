@@ -1,8 +1,10 @@
 #include <iostream>
+#include <cstring>
 #include "Grammar.h"
 #include "LR1Grammar.h"
+#include "LL1Grammar.h"
 
-int main() {
+int main(int argc, char **argv) {
     using namespace std;
     grammar::SymbolSet terminals = {"+", "-", "*", "/", "(", ")", "num"};
     grammar::SymbolSet nonTerminals = {"E", "T", "F"};
@@ -12,15 +14,28 @@ int main() {
             {"F", {{"(", "E", ")"}, {"num"}}}
     };
     grammar::Symbol startSymbol = "E";
-    LR1Grammar g(nonTerminals, terminals, productions, startSymbol);
-    g.init();
-    g.printAll();
+    char *type = nullptr;
+    if (argc > 1) {
+        type = argv[1];
+    }
+
+    unique_ptr<Grammar> grammarParser;
+
+    if (type and strcmp(type, "LL") == 0) {
+        grammarParser = make_unique<LL1Grammar>(nonTerminals, terminals, productions, startSymbol);
+    } else {
+        grammarParser = make_unique<LR1Grammar>(nonTerminals, terminals, productions, startSymbol);
+    }
+
+    grammarParser->init();
+    grammarParser->printAll(cout);
+
     while (true) {
         try {
             string input;
             cin >> input;
-            auto tokens = g.tokenizeString(input);
-            g.parse(tokens, cout);
+            auto tokens = grammarParser->tokenizeString(input);
+            grammarParser->parse(tokens, cout);
         } catch (GrammarException &e) {
             cerr << e.what() << endl;
         }

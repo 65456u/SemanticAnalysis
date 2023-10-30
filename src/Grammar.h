@@ -92,6 +92,9 @@ public:
 
     virtual void init() = 0;
 
+    virtual void printAll(std::ostream &ostream) = 0;
+
+    virtual void parse(grammar::Sentence tokens, std::ostream &ostream) = 0;
 
     void printFirstSet(std::ostream &ostream = std::cout) const;
 
@@ -110,9 +113,6 @@ public:
     static std::string ruleToString(const grammar::Symbol &nonTerminal, const grammar::Rule &sequence);
 
     grammar::Rule tokenizeString(const std::string &str);
-
-    virtual void parse(grammar::Sentence tokens, std::ostream &ostream) = 0;
-
 };
 
 class GrammarException : public std::exception {

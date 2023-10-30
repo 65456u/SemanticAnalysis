@@ -132,7 +132,7 @@ public:
 
     void parse(grammar::Sentence tokens, std::ostream &ostream) override;
 
-    void printAll(std::ostream &ostream = std::cout);
+    void printAll(std::ostream &ostream) override;
 
     void printItemSetsCollection(std::ostream &ostream = std::cout) const;
 

@@ -33,7 +33,7 @@ public:
 
     void printParsingTable(std::ostream &ostream);
 
-    void print(std::ostream &ostream = std::cout);
+    void printAll(std::ostream &ostream) override;
 
     LL1Grammar(grammar::SymbolSet nonTerminals,
                grammar::SymbolSet terminals,
