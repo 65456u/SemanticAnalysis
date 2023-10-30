@@ -1,8 +1,9 @@
+
 # Semantic Analysis
 
 ## Description
 
-The SemanticAnalysis project provides a C++ implementation for parsing and analyzing context-free grammars using LL(1) parsing technique.
+The SemanticAnalysis project provides a C++ implementation for parsing and analyzing context-free grammars using LR(1) parsing technique.
 
 ## Usage Instructions
 
@@ -20,7 +21,7 @@ make
 
 2. **Running the Program**:
 ```shell
-# Execute the compiled executable to observe LL(1) parsing in Action:
+# Execute the compiled executable to observe LR(1) parsing in Action:
 ./SemanticAnalysis
 ```
 
@@ -28,17 +29,17 @@ make
 
 ## Built-in Grammar
 
-The built-in grammar is as following:
-$$
-\begin{equation*}
-\begin{aligned}
-\mathrm{E} & \rightarrow \mathrm{E}+\mathrm{T} \,|\, \mathrm{E}-\mathrm{T} \,|\, \mathrm{T} \\
-\mathrm{T} & \rightarrow \mathrm{T}*\mathrm{F} \,|\, \mathrm{T}/\mathrm{F} \,|\, \mathrm{F} \\
-\mathrm{F} & \rightarrow (\mathrm{E}) \,|\, \mathrm{num}
-\end{aligned}
-\end{equation*}
-$$
- You can alter the grammar in the `main.cpp` file.
+The built-in grammar is as follows:
+
+\[
+\begin{align*}
+E &\rightarrow E + T \,|\, E - T \,|\, T \\
+T &\rightarrow T * F \,|\, T / F \,|\, F \\
+F &\rightarrow (E) \,|\, \text{num}
+\end{align*}
+\]
+
+You can alter the grammar in the `main.cpp` file.
 
 ## Sample Usage
 
@@ -50,12 +51,10 @@ $$
    
 2. **Output**:
    ```
-   Matched Stack   Input   Action
-           E$      num$    Output E->TE'
-           TE'$    num$    Output T->FT'
-           FT'E'$  num$    Output F->num
-   num     T'E'$   $       match num
-   num     T'E'$   $       Output T'->e
-   num     E'$     $       Output E'->e
-   num$                    match $
+   STACK   SYMBOLS INPUT   ACTION
+   0               num$    SHIFT
+   05      num     $       REDUCE F->num
+   03      F       $       REDUCE T->F
+   04      T       $       REDUCE E->T
+   02      E       $       ACCEPT
    ```
