@@ -23,11 +23,32 @@ namespace grammar {
     using SymbolSet = std::set<Symbol>;
     using Rule = std::deque<Symbol>;
     using RuleSet = std::set<Rule>;
-    using SymbolSetMap = std::map<grammar::Symbol, grammar::SymbolSet>;
-    using SymbolProductionMap = std::map<grammar::Symbol, std::set<grammar::Rule>>;
-    using LL1ParsingTable = std::map<grammar::Symbol, std::map<grammar::Symbol, grammar::Rule>>;
+    using SymbolToSymbolSetMap = std::map<grammar::Symbol, grammar::SymbolSet>;
+    using SymbolToProductionRuleSetMap = std::map<grammar::Symbol, std::set<grammar::Rule>>;
     using Sentence = std::deque<Symbol>;
     using StringVector = std::vector<std::string>;
+
+    struct ProductionRule {
+        Symbol from;
+        Rule to;
+
+        bool operator<(const ProductionRule &other) const {
+            if (from < other.from) {
+                return true;
+            }
+            return to < other.to;
+        }
+
+        bool operator==(const ProductionRule &other) const {
+            return from == other.from and to == other.to;
+        }
+
+        [[nodiscard]] std::string toString() const {
+            std::stringstream result;
+            result << from << "->" << utils::join(to, "");
+            return result.str();
+        }
+    };
 }
 
 class Grammar {
@@ -35,35 +56,63 @@ private:
 protected:
     grammar::SymbolSet terminalSet;
     grammar::SymbolSet nonTerminalSet;
-    grammar::SymbolProductionMap productionMap;
+    grammar::SymbolToProductionRuleSetMap productionMap;
     grammar::Symbol startSymbol;
     grammar::Symbol epsilonSymbol = "e";
+    grammar::SymbolToSymbolSetMap firstSets;
+    grammar::SymbolToSymbolSetMap followSets;
+    grammar::SymbolSet towardsEpsilonSet;
+    grammar::Symbol tailSign = "$";
+    bool firstSetsConstructed = false;
+    bool followSetsConstructed = false;
+    bool towardsEpsilonSetConstructed = false;
 
     void removeLeftRecursion();
 
+    void constructFirstSets();
+
+    void constructFollowSets();
+
     void removeDirectRecursion();
+
+
+    void constructTowardsEpsilonSet();
+
+    void removeEpsilon();
+
+    void func(grammar::Sentence sentence, grammar::RuleSet &output);
+
+    grammar::SymbolSet getFirstSet(const grammar::Symbol &symbol);
 
 public:
     Grammar(grammar::SymbolSet nonTerminals,
             grammar::SymbolSet terminals,
-            grammar::SymbolProductionMap productions,
+            grammar::SymbolToProductionRuleSetMap productions,
             grammar::Symbol startSymbol);
 
     virtual void init() = 0;
+
+
+    void printFirstSet(std::ostream &ostream = std::cout) const;
+
+    void printFollowSet(std::ostream &ostream = std::cout) const;
+
+    void printTowardsEpsilonSet(std::ostream &ostream = std::cout) const;
 
     bool isNonTerminal(const grammar::Symbol &symbol);
 
     bool isTerminal(const grammar::Symbol &symbol);
 
-    void printGrammar(std::ostream &output) const;
+    void printGrammar(std::ostream &output = std::cout) const;
 
-    static void printSymbolSetMap(const grammar::SymbolSetMap &symbolSetMap, std::ostream &ostream);
+    static void printSymbolSetMap(const grammar::SymbolToSymbolSetMap &symbolSetMap, std::ostream &ostream);
 
     static std::string ruleToString(const grammar::Symbol &nonTerminal, const grammar::Rule &sequence);
 
     grammar::Rule tokenizeString(const std::string &str);
 
     virtual void parse(grammar::Sentence tokens, std::ostream &ostream) = 0;
+
 };
 
 class GrammarException : public std::exception {

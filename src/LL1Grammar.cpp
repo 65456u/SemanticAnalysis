@@ -1,21 +1,6 @@
 #include "LL1Grammar.h"
 
 
-grammar::SymbolSet LL1Grammar::getFirstSet(const grammar::Symbol &symbol) {
-    grammar::SymbolSet firstSet;
-    if (isTerminal(symbol) or symbol == epsilonSymbol) {
-        firstSet.insert(symbol);
-        return firstSet;
-    } else if (isNonTerminal(symbol)) {
-        for (const auto &production: productionMap[symbol]) {
-            auto newSymbolSet = getFirstSet(production.front());
-            grammar::SymbolSet unionSet = utils::unionSet(firstSet, newSymbolSet);
-            firstSet = unionSet;
-        }
-    }
-    return firstSet;
-}
-
 grammar::SymbolSet LL1Grammar::getFirstSet(const grammar::Rule &sequence) {
     grammar::SymbolSet firstSet;
     const auto &firstSymbol = sequence.front();
@@ -27,61 +12,6 @@ grammar::SymbolSet LL1Grammar::getFirstSet(const grammar::Rule &sequence) {
     } else {
         throw GrammarException("Unrecognized Symbol 1");
     }
-}
-
-void LL1Grammar::constructFirstSets() {
-    firstSetsConstructed = true;
-    for (const auto &nonTerminal: nonTerminalSet) {
-        firstSets[nonTerminal] = getFirstSet(nonTerminal);
-    }
-}
-
-void LL1Grammar::constructFollowSets() {
-    followSets[startSymbol].insert(tailSign);
-    while (true) {
-        bool altered = false;
-        for (const auto &nonTerminal: nonTerminalSet) {
-            for (const auto &production: productionMap[nonTerminal]) {
-                for (size_t i = 0; i < production.size() - 1; i++) {
-                    const auto &currentSymbol = production[i];
-                    if (isNonTerminal(currentSymbol)) {
-                        for (size_t j = i + 1; j < production.size(); j++) {
-                            auto nextSymbol = production[j];
-                            if (isTerminal(nextSymbol)) {
-                                utils::insert(followSets[currentSymbol], nextSymbol, altered);
-                            } else if (isNonTerminal(nextSymbol)) {
-                                for (auto symbol: firstSets[nextSymbol]) {
-                                    if (symbol != epsilonSymbol) {
-                                        utils::insert(followSets[currentSymbol], symbol, altered);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                for (auto reverseIterator = production.rbegin();
-                     reverseIterator != production.rend(); reverseIterator++) {
-                    const auto &lastSymbol = *reverseIterator;
-                    if (isTerminal(lastSymbol) or lastSymbol == epsilonSymbol) {
-                        break;
-                    } else if (isNonTerminal(lastSymbol)) {
-                        for (auto symbol: followSets[nonTerminal]) {
-                            utils::insert(followSets[lastSymbol], symbol, altered);
-                        }
-                        if (not utils::contains(towardsEpsilonSet, lastSymbol)) {
-                            break;
-                        }
-                    } else {
-                        throw GrammarException("Invalid Symbol 2");
-                    }
-                }
-            }
-        }
-        if (not altered) {
-            break;
-        }
-    }
-    followSetsConstructed = true;
 }
 
 void LL1Grammar::constructParsingTable() {
@@ -171,44 +101,6 @@ std::string LL1Grammar::getParseStep(grammar::Sentence &tokens,
             }, "\t");
 }
 
-void LL1Grammar::constructTowardsEpsilonSet() {
-    while (true) {
-        bool altered = false;
-        for (auto nonTerminal: nonTerminalSet) {
-            for (const auto &production: productionMap[nonTerminal]) {
-                if (production == grammar::Sentence({epsilonSymbol})) {
-                    utils::insert(towardsEpsilonSet, nonTerminal, altered);
-                }
-                bool flag = true;
-                for (const auto &symbol: production) {
-                    if (not utils::contains(towardsEpsilonSet, symbol)) {
-                        flag = false;
-                        break;
-                    }
-                }
-                if (flag) {
-                    utils::insert(towardsEpsilonSet, nonTerminal, altered);
-                }
-            }
-        }
-        if (not altered) {
-            break;
-        }
-    }
-    towardsEpsilonSetConstructed = true;
-}
-
-void LL1Grammar::printFirstSet(std::ostream &ostream) const {
-    printSymbolSetMap(firstSets, ostream);
-}
-
-void LL1Grammar::printFollowSet(std::ostream &ostream) const {
-    printSymbolSetMap(followSets, ostream);
-}
-
-void LL1Grammar::printTowardsEpsilonSet(std::ostream &ostream) const {
-    ostream << utils::join(towardsEpsilonSet, " ") << std::endl;
-}
 
 void LL1Grammar::printParsingTable(std::ostream &ostream) {
     auto newTerminalSet = utils::unionSet(terminalSet, grammar::SymbolSet{tailSign});
@@ -238,7 +130,7 @@ void LL1Grammar::insertParsingTableEntry(const grammar::Symbol &nonTerminal, con
 }
 
 LL1Grammar::LL1Grammar(grammar::SymbolSet nonTerminals, grammar::SymbolSet terminals,
-                       grammar::SymbolProductionMap &productions, grammar::Symbol startSymbol)
+                       grammar::SymbolToProductionRuleSetMap &productions, grammar::Symbol startSymbol)
         : Grammar(std::move(nonTerminals), std::move(terminals), productions, std::move(startSymbol)) {
 
 }
@@ -267,6 +159,9 @@ void LL1Grammar::print(std::ostream &ostream) {
 void LL1Grammar::init() {
     removeLeftRecursion();
     constructTowardsEpsilonSet();
+    printGrammar();
+    removeEpsilon();
+    printGrammar();
     constructFirstSets();
     constructFollowSets();
     constructParsingTable();

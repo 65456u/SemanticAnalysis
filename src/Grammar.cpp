@@ -78,7 +78,7 @@ std::string Grammar::ruleToString(const grammar::Symbol &nonTerminal, const gram
     return ss.str();
 }
 
-void Grammar::printSymbolSetMap(const grammar::SymbolSetMap &symbolSetMap, std::ostream &ostream) {
+void Grammar::printSymbolSetMap(const grammar::SymbolToSymbolSetMap &symbolSetMap, std::ostream &ostream) {
     for (const auto &row: symbolSetMap) {
         ostream << row.first << " : " << utils::join(row.second, " ") << std::endl;
     }
@@ -121,8 +121,177 @@ bool Grammar::isNonTerminal(const grammar::Symbol &symbol) {
 }
 
 Grammar::Grammar(grammar::SymbolSet nonTerminals, grammar::SymbolSet terminals,
-                 grammar::SymbolProductionMap productions, grammar::Symbol startSymbol)
+                 grammar::SymbolToProductionRuleSetMap productions, grammar::Symbol startSymbol)
         : nonTerminalSet(std::move(nonTerminals)), terminalSet(std::move(terminals)),
           productionMap(std::move(productions)),
           startSymbol(std::move(startSymbol)) {}
 
+
+void Grammar::constructFirstSets() {
+    for (const auto &nonTerminal: nonTerminalSet) {
+        grammar::SymbolSet symbolSet{nonTerminal};
+        bool altered = true;
+        while (altered) {
+            altered = false;
+            for (const auto &currentSymbol: symbolSet) {
+                for (auto production: productionMap[currentSymbol]) {
+                    auto firstSymbol = production.front();
+                    if (isTerminal(firstSymbol)) {
+                        utils::insert(firstSets[nonTerminal], firstSymbol, altered);
+                        firstSets[currentSymbol].insert(firstSymbol);
+                    } else if (isNonTerminal((firstSymbol))) {
+                        utils::insert(symbolSet, firstSymbol, altered);
+                    }
+                }
+            }
+        }
+    }
+    firstSetsConstructed = true;
+}
+
+void Grammar::constructFollowSets() {
+    followSets[startSymbol].insert(tailSign);
+    bool altered = true;
+    while (altered) {
+        altered = false;
+        for (const auto &nonTerminal: nonTerminalSet) {
+            for (const auto &production: productionMap[nonTerminal]) {
+                for (size_t i = 0; i < production.size() - 1; i++) {
+                    const auto &currentSymbol = production[i];
+                    if (isNonTerminal(currentSymbol)) {
+                        for (size_t j = i + 1; j < production.size(); j++) {
+                            auto nextSymbol = production[j];
+                            if (isTerminal(nextSymbol)) {
+                                utils::insert(followSets[currentSymbol], nextSymbol, altered);
+                            } else if (isNonTerminal(nextSymbol)) {
+                                for (auto symbol: firstSets[nextSymbol]) {
+                                    if (symbol != epsilonSymbol) {
+                                        utils::insert(followSets[currentSymbol], symbol, altered);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (auto reverseIterator = production.rbegin();
+                     reverseIterator != production.rend(); reverseIterator++) {
+                    const auto &lastSymbol = *reverseIterator;
+                    if (isTerminal(lastSymbol) or lastSymbol == epsilonSymbol) {
+                        break;
+                    } else if (isNonTerminal(lastSymbol)) {
+                        for (auto symbol: followSets[nonTerminal]) {
+                            utils::insert(followSets[lastSymbol], symbol, altered);
+                        }
+                        if (not utils::contains(towardsEpsilonSet, lastSymbol)) {
+                            break;
+                        }
+                    } else {
+                        throw GrammarException("Invalid Symbol 2");
+                    }
+                }
+            }
+        }
+    }
+    followSetsConstructed = true;
+}
+
+grammar::SymbolSet Grammar::getFirstSet(const grammar::Symbol &symbol) {
+    if (symbol == epsilonSymbol or symbol == tailSign or isTerminal(symbol)) {
+        return grammar::SymbolSet{symbol};
+    } else if (isNonTerminal(symbol)) {
+        if (firstSetsConstructed) {
+            return firstSets[symbol];
+        }
+        grammar::SymbolSet firstSet;
+        grammar::SymbolSet symbolSet{symbol};
+        bool altered = true;
+        while (altered) {
+            altered = false;
+            for (auto currentSymbol: symbolSet) {
+                if (isNonTerminal(currentSymbol)) {
+                    for (auto production: productionMap[currentSymbol]) {
+                        auto firstSymbol = production.front();
+                        if (isTerminal(firstSymbol)) {
+                            utils::insert(firstSet, firstSymbol, altered);
+                        } else if (isNonTerminal(firstSymbol)) {
+                            utils::insert(symbolSet, firstSymbol, altered);
+                        }
+                    }
+                } else if (isTerminal(currentSymbol)) {
+                    utils::insert(firstSet, currentSymbol, altered);
+                }
+            }
+        }
+        if (firstSet.empty()) {
+            firstSet.insert(epsilonSymbol);
+        }
+        return firstSet;
+    } else {
+        throw GrammarException("Can't Find Symbol Set: Unrecognized Symbol");
+    }
+}
+
+void Grammar::printFirstSet(std::ostream &ostream) const {
+    printSymbolSetMap(firstSets, ostream);
+}
+
+void Grammar::printFollowSet(std::ostream &ostream) const {
+    printSymbolSetMap(followSets, ostream);
+}
+
+void Grammar::printTowardsEpsilonSet(std::ostream &ostream) const {
+    ostream << utils::join(towardsEpsilonSet, " ") << std::endl;
+}
+
+void Grammar::constructTowardsEpsilonSet() {
+
+    bool altered = true;
+    while (altered) {
+        altered = false;
+        for (auto nonTerminal: nonTerminalSet) {
+            for (const auto &production: productionMap[nonTerminal]) {
+                bool allSymbolsInEpsilonSet = std::all_of(production.begin(), production.end(),
+                                                          [&](const auto &symbol) {
+                                                              return utils::contains(towardsEpsilonSet, symbol);
+                                                          });
+                if (production == grammar::Sentence({epsilonSymbol}) or allSymbolsInEpsilonSet) {
+                    utils::insert(towardsEpsilonSet, nonTerminal, altered);
+                }
+            }
+        }
+    }
+    towardsEpsilonSetConstructed = true;
+}
+
+void Grammar::func(grammar::Sentence sentence, grammar::RuleSet &output) {
+    for (long i = 0; i < sentence.size(); i++) {
+        if (utils::contains(towardsEpsilonSet, sentence[i])) {
+            grammar::Sentence newSentence;
+            newSentence.assign(sentence.begin(), sentence.end());
+            newSentence.erase(newSentence.begin() + i);
+            output.insert(newSentence);
+            func(newSentence, output);
+        }
+    }
+}
+
+void Grammar::removeEpsilon() {
+    if (not towardsEpsilonSetConstructed) {
+        constructTowardsEpsilonSet();
+    }
+    for (const auto &nonTerminal: nonTerminalSet) {
+        for (const auto &production: productionMap[nonTerminal]) {
+            func(production, productionMap[nonTerminal]);
+        }
+    }
+    for (const auto &nonTerminal: nonTerminalSet) {
+        auto itr = productionMap[nonTerminal].begin();
+        while (itr != productionMap[nonTerminal].end()) {
+            if ((*itr).front() == epsilonSymbol) {
+                itr = productionMap[nonTerminal].erase(itr);
+            } else {
+                itr++;
+            }
+        }
+    }
+}

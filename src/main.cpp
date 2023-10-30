@@ -1,26 +1,28 @@
-
+#include <iostream>
 #include "Grammar.h"
-#include "LL1Grammar.h"
+#include "LR1Grammar.h"
 
 int main() {
-    // Define non-terminalSet, terminalSet, productionMap, and start symbol
     using namespace std;
-    grammar::SymbolSet nonTerminals = {"E", "T", "F"};
     grammar::SymbolSet terminals = {"+", "-", "*", "/", "(", ")", "num"};
+    grammar::SymbolSet nonTerminals = {"E", "T", "F"};
     map<grammar::Symbol, set<grammar::Rule>> productions = {
             {"E", {{"E", "+", "T"}, {"E", "-", "T"}, {"T"}}},
             {"T", {{"T", "*", "F"}, {"T", "/", "F"}, {"F"}}},
             {"F", {{"(", "E", ")"}, {"num"}}}
     };
     grammar::Symbol startSymbol = "E";
-    LL1Grammar grammar(nonTerminals, terminals, productions, startSymbol);
-    grammar.print();
-    grammar.init();
-    grammar.print();
+    LR1Grammar g(nonTerminals, terminals, productions, startSymbol);
+    g.init();
+    g.printAll();
     while (true) {
-        string tokenString;
-        cin >> tokenString;
-        auto tokens = grammar.tokenizeString(tokenString);
-        grammar.parse(tokens, cout);
+        try {
+            string input;
+            cin >> input;
+            auto tokens = g.tokenizeString(input);
+            g.parse(tokens, cout);
+        } catch (GrammarException &e) {
+            cerr << e.what() << endl;
+        }
     }
 }

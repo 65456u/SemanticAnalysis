@@ -9,15 +9,20 @@ The SemanticAnalysis project provides a C++ implementation for parsing and analy
 To use the SemanticAnalysis project, follow these steps:
 
 1. **Building the Project**:
-   - Create a build directory: `mkdir build`
-   - Generate build files using CMake: `cmake ..`
-   - Build the project: `make`
+```shell
+# Create a build directory:
+mkdir build
+# Generate build files using CMake
+cmake ..
+# Build the project
+make
+```
 
 2. **Running the Program**:
-   - Execute the compiled executable to observe LL(1) parsing in action:
-     ```
-     ./SemanticAnalysis
-     ```
+```shell
+# Execute the compiled executable to observe LL(1) parsing in Action:
+./SemanticAnalysis
+```
 
    The program will prompt you to input a string of tokens. It will then parse the input using the LL(1) parsing table generated from the sample grammar provided in the `main.cpp` file.
 
@@ -31,7 +36,7 @@ $$
 \mathrm{T} & \rightarrow \mathrm{T}*\mathrm{F} \,|\, \mathrm{T}/\mathrm{F} \,|\, \mathrm{F} \\
 \mathrm{F} & \rightarrow (\mathrm{E}) \,|\, \mathrm{num}
 \end{aligned}
-\end{equation*}
+\end{equation*}
 $$
  You can alter the grammar in the `main.cpp` file.
 

@@ -57,6 +57,16 @@ namespace utils {
         }
     }
 
+    template<typename K,typename V>
+    bool findKey(std::map<K,V> map,V value, K & key) {
+        for (const auto &pair:map) {
+            if (pair.second==value) {
+                key=pair.first;
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 #endif //UTILS_H
