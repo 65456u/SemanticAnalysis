@@ -69,8 +69,6 @@ namespace grammar {
                 follow(std::move(nextSymbol)) {}
 
         grammar::Symbol follow;
-
-
     };
 
     using LR1ItemSet = std::set<LR1Item>;
@@ -78,7 +76,7 @@ namespace grammar {
     using LR1ItemSetMap = std::map<size_t, LR1ItemSet>;
     using ProductionVector = std::vector<ProductionRule>;
     enum class ActionType {
-        SHIFT, REDUCE, REJECT, ACCEPT, ERROR
+        SHIFT, REDUCE, ACCEPT, ERROR
     };
     using State = size_t;
     using Action = struct Action {
@@ -89,49 +87,6 @@ namespace grammar {
             return type == other.type and value == other.value;
         }
     };
-    enum class StackItemType {
-        SYMBOL, STATE
-    };
-    using StackUnion = class StackUnion {
-    private:
-        StackItemType type;
-        Symbol symbol;
-        State state = 0;
-    public:
-        explicit StackUnion(Symbol s) {
-            type = StackItemType::SYMBOL;
-            symbol = std::move(s);
-            state = 0;
-        }
-
-        explicit StackUnion(State s) {
-            type = StackItemType::STATE;
-            state = s;
-            symbol = "";
-        }
-
-        Symbol getSymbol() {
-            if (type == StackItemType::SYMBOL) {
-                return symbol;
-            } else {
-                return "";
-            }
-        }
-
-        State getState() {
-            if (type == StackItemType::STATE) {
-                return state;
-            } else {
-                return 2952;
-            }
-        }
-
-        StackItemType getType() {
-            return type;
-        }
-    };
-    using StateStack = std::deque<StackUnion>;
-
 }
 class LR1Grammar : public Grammar {
 private:
@@ -141,7 +96,6 @@ private:
     grammar::Symbol delimiter = ".";
     grammar::LR1ItemSetMap itemSetMap;
     size_t itemSetCount = 0;
-    size_t productionCount = 0;
     std::map<size_t, std::map<grammar::Symbol, size_t>> edges;
     grammar::ProductionVector productionVector;
     std::map<std::string, size_t> productionIndices;
@@ -162,21 +116,7 @@ private:
 
     grammar::LR1ItemSet go(const grammar::LR1ItemSet &I, const grammar::Symbol &x);
 
-    void indexProductions() {
-        size_t count = 0;
-        productionIndices.clear();
-        productionVector.clear();
-        for (const auto &nonTerminal: nonTerminalSet) {
-            for (const auto &rule: productionMap[nonTerminal]) {
-                auto productionRule = grammar::ProductionRule{nonTerminal, rule};
-                productionVector.push_back(productionRule);
-                productionIndices[productionRule.toString()] = count;
-                ++count;
-            }
-        }
-        productionCount = count;
-        productionsIndexed = true;
-    }
+    void indexProductions();
 
     void printEdges(std::ostream &ostream = std::cout) {
         for (const auto &p: edges) {
@@ -184,19 +124,6 @@ private:
                 ostream << p.first << "\t" << q.first << "\t" << q.second << std::endl;
             }
         }
-    }
-
-    static std::string stackToString(grammar::StateStack stack) {
-        std::stringstream result;
-        for (auto itr = stack.rbegin(); itr != stack.rend(); itr++) {
-            auto item = *itr;
-            if (item.getType() == grammar::StackItemType::STATE) {
-                result << item.getState();
-            } else {
-                result << item.getSymbol();
-            }
-        }
-        return result.str();
     }
 
 
@@ -207,62 +134,11 @@ public:
 
     void printAll(std::ostream &ostream = std::cout);
 
-    void printItemSetsCollection(std::ostream &ostream = std::cout) const {
-        for (const auto &pair: itemSetMap) {
-            ostream << pair.first << std::endl;
-            for (const auto &item: pair.second) {
-                item.print();
-            }
-        }
-    }
+    void printItemSetsCollection(std::ostream &ostream = std::cout) const;
 
-    void printParsingTable(std::ostream &ostream = std::cout) {
-        ostream << "\t" << utils::join(extendedTerminalSet, "\t");
-        for (const auto &nonTerminal: nonTerminalSet) {
-            if (nonTerminal != startSymbol) {
-                ostream << "\t" << nonTerminal;
-            }
-        }
-        ostream<<std::endl;
-        for (size_t i = 0; i < itemSetCount; i++) {
-            ostream << i << "\t";
-            for (const auto &t: extendedTerminalSet) {
-                auto action = actionTable[i][t];
-                switch (action.type) {
-                    case grammar::ActionType::ERROR:
-                        ostream << "\t";
-                        break;
-                    case grammar::ActionType::ACCEPT:
-                        ostream << "ACC\t";
-                        break;
-                    case grammar::ActionType::SHIFT:
-                        ostream << "S" << action.value << "\t";
-                        break;
-                    case grammar::ActionType::REDUCE:
-                        ostream << "R" << action.value << "\t";
-                        break;
-                    case grammar::ActionType::REJECT:
-                        ostream << "REJ\t";
-                        break;
-                }
-            }
-            for (const auto &nonTerminal: nonTerminalSet) {
-                if (nonTerminal != startSymbol) {
-                    if (utils::contains(gotoTable[i], nonTerminal)) {
-                        ostream << gotoTable[i][nonTerminal];
-                    }
-                    ostream << "\t";
-                }
-            }
-            ostream << std::endl;
-        }
-    }
+    void printParsingTable(std::ostream &ostream = std::cout);
 
-    void printProductions(std::ostream &ostream) {
-        for (size_t i = 0; i < productionVector.size(); i++) {
-            ostream << i << "\t" << productionVector[i].toString() << std::endl;
-        }
-    }
+    void printProductions(std::ostream &ostream);
 
     LR1Grammar(grammar::SymbolSet nonTerminals, grammar::SymbolSet terminals,
                grammar::SymbolToProductionRuleSetMap &productions, grammar::Symbol startSymbol);

@@ -8,12 +8,9 @@ void LR1Grammar::parse(grammar::Sentence tokens, std::ostream &ostream) {
     }, "\t") << std::endl;
     std::deque<grammar::State> stateStack;
     grammar::Sentence symbolStack;
-    std::deque<grammar::StackItemType> typeIndicator;
     stateStack.push_back(0);
-    typeIndicator.push_back(grammar::StackItemType::STATE);
     tokens.push_back(tailSign);
     auto itr = tokens.begin();
-
     while (true) {
         auto s = stateStack.back();
         auto token = *itr;
@@ -211,11 +208,82 @@ void LR1Grammar::printAll(std::ostream &ostream) {
     if (canonicalItemSetCollectionConstructed) {
         ostream << "Canonical Item Sets Collection:" << std::endl;
         printItemSetsCollection(ostream);
+        ostream << "GOTO:" << std::endl;
+        printEdges(ostream);
     }
     if (parsingTableConstructed) {
         ostream << "Parsing Table:" << std::endl;
         printParsingTable(ostream);
     }
+}
+
+void LR1Grammar::printParsingTable(std::ostream &ostream) {
+    ostream << "\t" << utils::join(extendedTerminalSet, "\t");
+    for (const auto &nonTerminal: nonTerminalSet) {
+        if (nonTerminal != startSymbol) {
+            ostream << "\t" << nonTerminal;
+        }
+    }
+    ostream << std::endl;
+    for (size_t i = 0; i < itemSetCount; i++) {
+        ostream << i << "\t";
+        for (const auto &t: extendedTerminalSet) {
+            auto action = actionTable[i][t];
+            switch (action.type) {
+                case grammar::ActionType::ERROR:
+                    ostream << "\t";
+                    break;
+                case grammar::ActionType::ACCEPT:
+                    ostream << "ACC\t";
+                    break;
+                case grammar::ActionType::SHIFT:
+                    ostream << "S" << action.value << "\t";
+                    break;
+                case grammar::ActionType::REDUCE:
+                    ostream << "R" << action.value << "\t";
+                    break;
+            }
+        }
+        for (const auto &nonTerminal: nonTerminalSet) {
+            if (nonTerminal != startSymbol) {
+                if (utils::contains(gotoTable[i], nonTerminal)) {
+                    ostream << gotoTable[i][nonTerminal];
+                }
+                ostream << "\t";
+            }
+        }
+        ostream << std::endl;
+    }
+}
+
+void LR1Grammar::printProductions(std::ostream &ostream) {
+    for (size_t i = 0; i < productionVector.size(); i++) {
+        ostream << i << "\t" << productionVector[i].toString() << std::endl;
+    }
+}
+
+void LR1Grammar::printItemSetsCollection(std::ostream &ostream) const {
+    for (const auto &pair: itemSetMap) {
+        ostream << pair.first << std::endl;
+        for (const auto &item: pair.second) {
+            item.print();
+        }
+    }
+}
+
+void LR1Grammar::indexProductions() {
+    size_t count = 0;
+    productionIndices.clear();
+    productionVector.clear();
+    for (const auto &nonTerminal: nonTerminalSet) {
+        for (const auto &rule: productionMap[nonTerminal]) {
+            auto productionRule = grammar::ProductionRule{nonTerminal, rule};
+            productionVector.push_back(productionRule);
+            productionIndices[productionRule.toString()] = count;
+            ++count;
+        }
+    }
+    productionsIndexed = true;
 }
 
 
